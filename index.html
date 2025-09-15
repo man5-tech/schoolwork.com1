@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Command Box Website with AI & Firewall</title>
+<style>
+body {
+  margin:0; height:100vh; display:flex; justify-content:center; align-items:center;
+  background-color:#0d001a; font-family:monospace; color:white;
+}
+.container { display:flex; flex-direction:column; align-items:center; gap:15px; }
+.tabs { display:flex; gap:10px; }
+.tab {
+  padding:8px 16px; background-color:#1a0033; border-radius:6px; cursor:pointer;
+  border:2px solid #6a0dad; transition: background 0.2s;
+}
+.tab.active { background-color:#6a0dad; }
+input, textarea {
+  width:400px; padding:15px; border:2px solid #6a0dad; border-radius:8px;
+  background-color:#1a0033; outline:none; color:white; font-size:18px; resize:none;
+}
+button {
+  padding:10px 20px; border:none; border-radius:6px; background-color:#6a0dad;
+  color:white; font-size:16px; cursor:pointer; transition:background 0.2s;
+}
+button:hover { background-color:#8b2fd1; }
+#commandsList, #suggestionsList { text-align:center; font-size:14px; color:#ccc; }
+#output {
+  margin-top:10px; width:400px; min-height:50px; border:1px solid #6a0dad;
+  border-radius:6px; padding:10px; background-color:#1a0033; color:#fff;
+  overflow-wrap:break-word; white-space:pre-wrap;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="tabs">
+    <div id="runTab" class="tab active">Run Command</div>
+    <div id="suggestTab" class="tab">Suggest Command</div>
+    <div id="scriptTab" class="tab">Script</div>
+    <div id="aiTab" class="tab">Airplane AI</div>
+  </div>
+
+  <input type="text" id="commandBox" placeholder="Type a command">
+  <input type="text" id="suggestBox" placeholder="Put in a command you want added" style="display:none;">
+  <textarea id="scriptBox" placeholder="Type JavaScript code here..." style="display:none;" rows="5"></textarea>
+  <textarea id="aiBox" placeholder="Ask a question or request a script..." style="display:none;" rows="5"></textarea>
+
+  <button id="runButton">Enter</button>
+
+  <div id="commandsList">Available commands: google, youtube, reddit, discord, proxyium</div>
+  <div id="suggestionsList">Suggestions: None yet</div>
+  <div id="output"></div>
+</div>
+
+<script>
+const runTab = document.getElementById("runTab");
+const suggestTab = document.getElementById("suggestTab");
+const scriptTab = document.getElementById("scriptTab");
+const aiTab = document.getElementById("aiTab");
+const commandBox = document.getElementById("commandBox");
+const suggestBox = document.getElementById("suggestBox");
+const scriptBox = document.getElementById("scriptBox");
+const aiBox = document.getElementById("aiBox");
+const runButton = document.getElementById("runButton");
+const commandsList = document.getElementById("commandsList");
+const suggestionsList = document.getElementById("suggestionsList");
+const output = document.getElementById("output");
+
+const commands = { 
+  google:"https://www.google.com",
+  youtube:"https://www.youtube.com",
+  reddit:"https://www.reddit.com",
+  discord:"https://discord.com/app",
+  proxyium:"https://proxyium.com"
+};
+const suggestions = [];
+
+function updateCommandList(){commandsList.textContent="Available commands: "+Object.keys(commands).join(", ");}
+function updateSuggestionsList(){suggestionsList.textContent=suggestions.length===0?"Suggestions: None yet":"Suggestions: "+suggestions.join(", ");}
+
+// Firewall + private popup
+function runCommand(){
+  let command = commandBox.value.trim().toLowerCase();
+  if(commands[command]){
+    window.open(commands[command], "_blank", "width=900,height=700,toolbar=no,location=no,status=no,menubar=no");
+  } else { alert("This command is blocked by the firewall or unknown."); }
+  commandBox.value="";
+}
+
+function suggestCommand(){
+  let suggestion = suggestBox.value.trim();
+  if(suggestion){ suggestions.push(suggestion); updateSuggestionsList(); alert("Thanks! You suggested: "+suggestion); suggestBox.value=""; }
+}
+
+function runScript(){
+  let code = scriptBox.value.trim();
+  if(code){ try{ let result=eval(code); output.textContent=result!==undefined?result:"Script executed."; } catch(err){ output.textContent="Error: "+err; } }
+  scriptBox.value="";
+}
+
+// AI: math, history, general knowledge
+function runAI(){
+  let question=aiBox.value.trim();
+  if(!question){ output.textContent="Please type a question or request."; return; }
+  const lower=question.toLowerCase();
+  let answer="";
+
+  // math
+  const mathMatch=question.match(/([-+]?\d*\.?\d+)\s*([\+\-\*\/])\s*([-+]?\d*\.?\d+)/);
+  if(mathMatch){
+    const num1=parseFloat(mathMatch[1]);
+    const operator=mathMatch[2];
+    const num2=parseFloat(mathMatch[3]);
+    switch(operator){
+      case "+": answer=num1+num2; break;
+      case "-": answer=num1-num2; break;
+      case "*": answer=num1*num2; break;
+      case "/": answer=num2!==0?num1/num2:"Cannot divide by zero"; break;
+    }
+    output.textContent="Math answer: "+answer;
+    aiBox.value=""; return;
+  }
+
+  // predefined answers
+  if(lower.includes("hello")||lower.includes("hi")) answer="Hello! How can I assist you today?";
+  else if(lower.includes("who is albert einstein")) answer="Albert Einstein was a theoretical physicist who developed the theory of relativity.";
+  else if(lower.includes("who discovered america")) answer="Christopher Columbus is often credited with discovering America in 1492.";
+  else if(lower.includes("capital of france")) answer="The capital of France is Paris.";
+  else if(lower.includes("generate script")) answer="Sample script: console.log('Hello World');\nPaste in the Script tab.";
+  else if(lower.includes("change background")) answer="Try this in Script tab: document.body.style.backgroundColor = 'red';";
+  else answer="I'm not sure about that. Try asking something else or a math question!";
+  
+  output.textContent=answer;
+  aiBox.value="";
+}
+
+function switchTab(tabName){
+  runTab.classList.remove("active"); suggestTab.classList.remove("active");
+  scriptTab.classList.remove("active"); aiTab.classList.remove("active");
+  commandBox.style.display="none"; suggestBox.style.display="none";
+  scriptBox.style.display="none"; aiBox.style.display="none";
+
+  if(tabName==="run"){ runTab.classList.add("active"); commandBox.style.display="block"; runButton.onclick=runCommand; }
+  else if(tabName==="suggest"){ suggestTab.classList.add("active"); suggestBox.style.display="block"; runButton.onclick=suggestCommand; }
+  else if(tabName==="script"){ scriptTab.classList.add("active"); scriptBox.style.display="block"; runButton.onclick=runScript; }
+  else if(tabName==="ai"){ aiTab.classList.add("active"); aiBox.style.display="block"; runButton.onclick=runAI; }
+}
+
+runTab.addEventListener("click",()=>switchTab("run"));
+suggestTab.addEventListener("click",()=>switchTab("suggest"));
+scriptTab.addEventListener("click",()=>switchTab("script"));
+aiTab.addEventListener("click",()=>switchTab("ai"));
+
+commandBox.addEventListener("keydown",e=>{if(e.key==="Enter") runCommand();});
+suggestBox.addEventListener("keydown",e=>{if(e.key==="Enter") suggestCommand();});
+scriptBox.addEventListener("keydown",e=>{if(e.key==="Enter") runScript();});
+aiBox.addEventListener("keydown",e=>{if(e.key==="Enter") runAI();});
+
+runButton.onclick=runCommand;
+
+updateCommandList(); updateSuggestionsList();
+</script>
+</body>
+</html>
